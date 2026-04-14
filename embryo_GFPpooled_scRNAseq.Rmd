@@ -1363,26 +1363,32 @@ cluster_gene_list <- lapply(cluster_gene_list, function(genes) {
 })
 
 
+cluster_gene_list.unlist <- as.data.frame(unique(unlist(cluster_gene_list)))
+
 background_gene_list <- unique(unlist(cluster_gene_list))
 
 
 # Use the compareCluster() function from clusterProfiler package to perform gene ontology analysis for all clusters together.
 
 # GO enrichment analysis for BP
-go_compare_bp <- compareCluster(geneCluster = cluster_gene_list, 
-                             fun = "enrichGO", 
-                             OrgDb = org.Ce.eg.db, 
-                             ont = "BP",  #("BP"、"MF" or "CC")
-                             universe = background_gene_list,
-                             pAdjustMethod = "BH",
-                             pvalueCutoff = 0.05,
-                             qvalueCutoff = 0.05)
+go_compare_bp <- compareCluster(
+  geneCluster = cluster_gene_list,
+  #geneCluster = cluster_gene_list.unlist,
+  fun = "enrichGO", 
+  OrgDb = org.Ce.eg.db, 
+  ont = "BP",  #("BP"、"MF" or "CC")
+  universe = background_gene_list,
+  pAdjustMethod = "BH",
+  pvalueCutoff = 0.05, qvalueCutoff = 0.05)
 
 bp <- clusterProfiler::simplify(go_compare_bp, cutoff = 0.7, by="p.adjust", select_fun = min)
 
-#pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP.pdf", height = 10, width = 20)
-pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_background.pdf", height = 10, width = 20)
-cluster.p1 <- dotplot(bp, showCategory = 1,
+#pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP.pdf", height = 5, width = 10)
+#pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP.collapsed.pdf", height = 5, width = 10)
+pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_background.pdf", height = 5, width = 10)
+cluster.p1 <- dotplot(bp,
+                      showCategory = 1,
+                      #showCategory = 5,
               title = "GO Enrichment (Biological Process)")
 cluster.p1 + theme(
   axis.text.y = element_text(size = 15),
@@ -1392,10 +1398,10 @@ cluster.p1 + theme(
 dev.off()
 
 
+
 bp_df <- as.data.frame(bp)
 write_csv(bp_df, "./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP.csv")
 write_csv(bp_df, "./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_background.csv")
-
 
 
 #Dot plots are not good for showing the relationship between GO terms. Can select and cluster GO terms first, and then use a tree plot to show the correlations between GO terms.
@@ -1428,6 +1434,8 @@ emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background_filtered <- emb.
 
 emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP_filtered <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP %>% 
   filter(str_detect(emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP$Description, "immune*|innate*|defense*"))
+
+emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background
 
 str(emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background_filtered)
 dim(emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background_filtered)
@@ -1510,6 +1518,59 @@ dev.off()
 
 
 ```{r}
+install.packages("UpSetR")
+library(UpSetR)
+
+gene <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background %>% separate_rows(geneID, sep = "/")
+dim(gene) # 12808    13
+
+
+clus.0 <- gene[gene$Cluster == "0", ]
+clus.1 <- gene[gene$Cluster == "1", ]
+clus.2 <- gene[gene$Cluster == "2", ]
+clus.3 <- gene[gene$Cluster == "3", ]
+clus.4 <- gene[gene$Cluster == "4", ]
+clus.5 <- gene[gene$Cluster == "5", ]
+clus.6 <- gene[gene$Cluster == "6", ]
+clus.7 <- gene[gene$Cluster == "7", ]
+clus.8 <- gene[gene$Cluster == "8", ]
+clus.9 <- gene[gene$Cluster == "9", ]
+clus.10 <- gene[gene$Cluster == "10", ]
+clus.11 <- gene[gene$Cluster == "11", ]
+clus.12 <- gene[gene$Cluster == "12", ]
+
+clusters <- list(
+  cluster0=clus.0$geneID, 
+  cluster1=clus.1$geneID,
+  cluster2=clus.2$geneID,
+  cluster3=clus.3$geneID,
+  cluster4=clus.4$geneID,
+  cluster5=clus.5$geneID,
+  cluster6=clus.6$geneID,
+  cluster7=clus.7$geneID,
+  cluster8=clus.8$geneID,
+  cluster9=clus.9$geneID,
+  cluster10=clus.10$geneID,
+  cluster11=clus.11$geneID,
+  cluster12=clus.12$geneID)
+                   
+
+pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.upsetPlot-GO-BP_allClusters.pdf", height = 5, width = 10)
+upset(fromList(clusters), 
+      nsets = 13,               
+      order.by = "freq",        
+      decreasing = TRUE,
+      mb.ratio = c(0.7, 0.4),
+      number.angles = 0, 
+      text.scale = 1.1, 
+      point.size = 2.8, 
+      line.size = 1
+)
+dev.off()
+```
+
+
+```{r}
 # how to do for specific clusters - across developmental time - with and without background gene set
 
 #early intestine
@@ -1551,9 +1612,9 @@ go_compare_bp_early <- compareCluster(
   fun = "enrichGO", 
   OrgDb = org.Ce.eg.db,
   ont = "BP",
-  universe = background_gene_list,
+  #universe = background_gene_list,
   #universe = mid_late_clusters.list,
-  #universe = mid_late_clusters.unlist,
+  universe = mid_late_clusters.unlist,
   pAdjustMethod = "BH",
   pvalueCutoff = 0.05,
   qvalueCutoff = 0.05)
@@ -1565,9 +1626,9 @@ go_compare_bp_mid <- compareCluster(
   fun = "enrichGO", 
   OrgDb = org.Ce.eg.db, 
   ont = "BP",
-  universe = background_gene_list,
+  #universe = background_gene_list,
   #universe = early_late_clusters.list,
-  #universe = early_late_clusters.unlist,
+  universe = early_late_clusters.unlist,
   pAdjustMethod = "BH",
   pvalueCutoff = 0.05,
   qvalueCutoff = 0.05)
@@ -1578,9 +1639,9 @@ go_compare_bp_late <- compareCluster(
   fun = "enrichGO", 
   OrgDb = org.Ce.eg.db, 
   ont = "BP",
-  universe = background_gene_list,
+  #universe = background_gene_list,
   #universe = early_mid_clusters.list,
-  #universe = early_mid_clusters.unlist,
+  universe = early_mid_clusters.unlist,
   pAdjustMethod = "BH",
   pvalueCutoff = 0.05,
   qvalueCutoff = 0.05)
@@ -1610,12 +1671,12 @@ write_csv(bp_late_dev_df, "./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredC
 
 
 #pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_early_dev.pdf", height = 5, width = 10)
-pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_early_dev-background.pdf", height = 5, width = 10)
+#pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_early_dev-background.pdf", height = 5, width = 10)
 #pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_early_dev-mid_late.pdf", height = 5, width = 10)
-#pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_early_dev-mid_late.collapsed.pdf", height = 5, width = 10)
+pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_early_dev-mid_late.collapsed.pdf", height = 5, width = 10)
 cluster.p1 <- dotplot(bp_early_dev, 
-                      #showCategory = 10, 
-                      showCategory = 5,
+                      showCategory = 5, 
+                      #showCategory = 1,
               title = "GO Enrichment (Biological Process)")
 cluster.p1 + theme(
   axis.text.y = element_text(size = 15),
@@ -1626,12 +1687,12 @@ dev.off()
 
 
 #pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_mid_dev.pdf", height = 5, width = 10)
-pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_mid_dev-background.pdf", height = 5, width = 10)
+#pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_mid_dev-background.pdf", height = 5, width = 10)
 #pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_mid_dev-early_late.pdf", height = 5, width = 10)
-#pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_mid_dev-early_late.collapsed.pdf", height = 5, width = 10)
+pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_mid_dev-early_late.collapsed.pdf", height = 5, width = 10)
 cluster.p1 <- dotplot(bp_mid_dev, 
-                      #showCategory = 10, 
-                      showCategory = 3,
+                      showCategory = 3, 
+                      #showCategory = 1,
               title = "GO Enrichment (Biological Process)")
 cluster.p1 + theme(
   axis.text.y = element_text(size = 15),
@@ -1643,12 +1704,12 @@ dev.off()
 
 
 #pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_late_dev.pdf", height = 5, width = 10)
-pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_late_dev-background.pdf", height = 5, width = 10)
+#pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_late_dev-background.pdf", height = 5, width = 10)
 #pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_late_dev-early_mid.pdf", height = 5, width = 10)
-#pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_late_dev-early_mid.collapsed.pdf", height = 5, width = 10)
+pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_late_dev-early_mid.collapsed.pdf", height = 5, width = 10)
 cluster.p1 <- dotplot(bp_late_dev, 
-                      #showCategory = 10, 
-                      showCategory = 2, 
+                      showCategory = 3, 
+                      #showCategory = 1, 
               title = "GO Enrichment (Biological Process)") 
 cluster.p1 + theme(
   axis.text.y = element_text(size = 15),
@@ -1697,8 +1758,8 @@ cen_post_clusters.unlist <- as.data.frame(unique(unlist(cen_post_clusters.list))
 
 
 go_compare_bp_ant <- compareCluster(
-  #geneCluster = anterior_clusters.list,
-  geneCluster = anterior_clusters.unlist,
+  geneCluster = anterior_clusters.list,
+  #geneCluster = anterior_clusters.unlist,
   fun = "enrichGO", 
   OrgDb = org.Ce.eg.db, 
   ont = "BP",
@@ -1710,8 +1771,8 @@ go_compare_bp_ant <- compareCluster(
   qvalueCutoff = 0.05)
 
 go_compare_bp_cen <- compareCluster(
-  #geneCluster = central_clusters.list,
-  geneClusters = central_clusters.unlist,
+  geneCluster = central_clusters.list,
+  #geneClusters = central_clusters.unlist,
   fun = "enrichGO", 
   OrgDb = org.Ce.eg.db, 
   ont = "BP",
@@ -1723,8 +1784,8 @@ go_compare_bp_cen <- compareCluster(
   qvalueCutoff = 0.05)
 
 go_compare_bp_post <- compareCluster(
-  #geneCluster = posterior_clusters.list, 
-  geneClusters = posterior_clusters.unlist,
+  geneCluster = posterior_clusters.list, 
+  #geneClusters = posterior_clusters.unlist,
   fun = "enrichGO", 
   OrgDb = org.Ce.eg.db, 
   ont = "BP",
@@ -1762,7 +1823,7 @@ write_csv(bp_post_dev_df, "./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredC
 #pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_anterior-cen_post.pdf", height = 5, width = 10)
 pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_anterior-cen_post.collapsed.pdf", height = 5, width = 10)
 cluster.p1 <- dotplot(bp_ant_dev, 
-                      showCategory = 10, 
+                      showCategory = 5, 
                       #showCategory = 1,
               title = "GO Enrichment (Biological Process)")
 cluster.p1 + theme(
@@ -1778,7 +1839,7 @@ dev.off()
 #pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_central-ant_post.pdf", height = 5, width = 10)
 pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_central-ant_post.collapsed.pdf", height = 5, width = 10)
 cluster.p1 <- dotplot(bp_cen_dev, 
-                      showCategory = 10, 
+                      showCategory = 5, 
                       #showCategory = 1,
               title = "GO Enrichment (Biological Process)")
 cluster.p1 + theme(
@@ -1794,7 +1855,7 @@ dev.off()
 #pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_posterior-ant_cen.pdf", height = 5, width = 10)
 pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_posterior-ant_cen.collapsed.pdf", height = 5, width = 10)
 cluster.p1 <- dotplot(bp_post_dev, 
-                      showCategory = 10, 
+                      showCategory = 3, 
                       #showCategory = 1,
               title = "GO Enrichment (Biological Process)")
 cluster.p1 + theme(
