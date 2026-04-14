@@ -1444,10 +1444,10 @@ str(emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP_filtered)
 dim(emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP_filtered)
 
 # expand the gene ID column 
-genes <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP_filtered %>% separate_rows(geneID, sep = "/")  
-dim(genes) # 2316   13
-str(genes)  
-str(genes$geneID)
+genes.all <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP_filtered %>% separate_rows(geneID, sep = "/")  
+dim(genes.all) # 2316   13
+str(genes.all)  
+str(genes.all$geneID)
 
 
 genes.background <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background_filtered %>% separate_rows(geneID, sep = "/")  
@@ -1456,15 +1456,17 @@ str(genes.background)
 str(genes.background$geneID)
 
 # how many and any duplicates? 
-unique(intersect(genes$geneID, genes.background$geneID))
-unique(length(intersect(genes$geneID, genes.background$geneID)))
+unique(intersect(genes.all$geneID, genes.background$geneID))
+unique(length(intersect(genes.all$geneID, genes.background$geneID))) #214
 
 
-common_genes <- unique(intersect(genes$geneID, genes.background$geneID))
+common_genes <- unique(intersect(genes.all$geneID, genes.background$geneID))
 common_genes
+dim(common_genes)
+str(common_genes)
 length(common_genes)
 
-unique_genes <- unique(setdiff(genes$geneID, genes.background$geneID))
+unique_genes <- unique(setdiff(genes.all$geneID, genes.background$geneID))
 unique_genes
 length(unique_genes)
 
@@ -1476,7 +1478,7 @@ library(VennDiagram)
 
 pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.VennDiagram-GO-BP.immune.pdf", height = 10, width = 10)
 venn.plot <- draw.pairwise.venn(
-  area1 = length(genes$geneID),
+  area1 = length(genes.all$geneID),
   area2 = length(genes.background$geneID),
   cross.area = length(common_genes),
   category = c("Genome", "Background"),
@@ -1490,23 +1492,23 @@ dev.off()
 emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP
 emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background
 
-genes.all <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP %>% separate_rows(geneID, sep = "/")  
+genes.all.all <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP %>% separate_rows(geneID, sep = "/")  
 genes.background.all <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background %>% separate_rows(geneID, sep = "/")  
 
-common_genes.all <- unique(intersect(genes.all$geneID, genes.background.all$geneID))
-length(common_genes.all)
+common_genes.all <- unique(intersect(genes.all.all$geneID, genes.background.all$geneID))
+length(common_genes.all) 
 # str(common_genes.all)
 # view(common_genes.all)
 # common_genes.all <- as.data.frame(common_genes.all)
 # write_csv(common_genes.all, "./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.VennDiagram-GO-BP.common_genes.all.csv")
 
-unique_genes.all <- unique(setdiff(genes.all$geneID, genes.background.all$geneID))
+unique_genes.all <- unique(setdiff(genes.all.all$geneID, genes.background.all$geneID))
 length(unique_genes.all)
 
 
 pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.VennDiagram-GO-BP.pdf", height = 10, width = 10)
 venn.plot <- draw.pairwise.venn(
-  area1 = length(genes.all$geneID),
+  area1 = length(genes.all.all$geneID),
   area2 = length(genes.background.all$geneID),
   cross.area = length(common_genes.all),
   category = c("Genome", "Background"),
@@ -1524,6 +1526,7 @@ library(UpSetR)
 gene <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background %>% separate_rows(geneID, sep = "/")
 dim(gene) # 12808    13
 
+#gene.all <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP %>% separate_rows(geneID, sep = "/")
 
 clus.0 <- gene[gene$Cluster == "0", ]
 clus.1 <- gene[gene$Cluster == "1", ]
@@ -1538,6 +1541,8 @@ clus.9 <- gene[gene$Cluster == "9", ]
 clus.10 <- gene[gene$Cluster == "10", ]
 clus.11 <- gene[gene$Cluster == "11", ]
 clus.12 <- gene[gene$Cluster == "12", ]
+
+length(unique(clus.12$geneID)) #842
 
 clusters <- list(
   cluster0=clus.0$geneID, 
@@ -1557,7 +1562,7 @@ clusters <- list(
 
 pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.upsetPlot-GO-BP_allClusters.pdf", height = 5, width = 10)
 upset(fromList(clusters), 
-      nsets = 13,               
+      nsets = 40,               
       order.by = "freq",        
       decreasing = TRUE,
       mb.ratio = c(0.7, 0.4),
