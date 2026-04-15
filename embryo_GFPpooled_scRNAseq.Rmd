@@ -1385,7 +1385,7 @@ bp <- clusterProfiler::simplify(go_compare_bp, cutoff = 0.7, by="p.adjust", sele
 
 #pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP.pdf", height = 5, width = 10)
 #pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP.collapsed.pdf", height = 5, width = 10)
-pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_background.pdf", height = 5, width = 10)
+#pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_background.pdf", height = 5, width = 10)
 cluster.p1 <- dotplot(bp,
                       showCategory = 1,
                       #showCategory = 5,
@@ -1400,7 +1400,7 @@ dev.off()
 
 
 bp_df <- as.data.frame(bp)
-write_csv(bp_df, "./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP.csv")
+#write_csv(bp_df, "./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP.csv")
 write_csv(bp_df, "./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_background.csv")
 
 
@@ -1523,24 +1523,24 @@ dev.off()
 install.packages("UpSetR")
 library(UpSetR)
 
-gene <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background %>% separate_rows(geneID, sep = "/")
-dim(gene) # 12808    13
+# bp_df, this variable was made up above
 
-#gene.all <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP %>% separate_rows(geneID, sep = "/")
+gene_df <- bp_df %>% separate_rows(geneID, sep = "/")
+dim(gene_df)
 
-clus.0 <- gene[gene$Cluster == "0", ]
-clus.1 <- gene[gene$Cluster == "1", ]
-clus.2 <- gene[gene$Cluster == "2", ]
-clus.3 <- gene[gene$Cluster == "3", ]
-clus.4 <- gene[gene$Cluster == "4", ]
-clus.5 <- gene[gene$Cluster == "5", ]
-clus.6 <- gene[gene$Cluster == "6", ]
-clus.7 <- gene[gene$Cluster == "7", ]
-clus.8 <- gene[gene$Cluster == "8", ]
-clus.9 <- gene[gene$Cluster == "9", ]
-clus.10 <- gene[gene$Cluster == "10", ]
-clus.11 <- gene[gene$Cluster == "11", ]
-clus.12 <- gene[gene$Cluster == "12", ]
+clus.0 <- gene_df[gene_df$Cluster == "0", ]
+clus.1 <- gene_df[gene_df$Cluster == "1", ]
+clus.2 <- gene_df[gene_df$Cluster == "2", ]
+clus.3 <- gene_df[gene_df$Cluster == "3", ]
+clus.4 <- gene_df[gene_df$Cluster == "4", ]
+clus.5 <- gene_df[gene_df$Cluster == "5", ]
+clus.6 <- gene_df[gene_df$Cluster == "6", ]
+clus.7 <- gene_df[gene_df$Cluster == "7", ]
+clus.8 <- gene_df[gene_df$Cluster == "8", ]
+clus.9 <- gene_df[gene_df$Cluster == "9", ]
+clus.10 <- gene_df[gene_df$Cluster == "10", ]
+clus.11 <- gene_df[gene_df$Cluster == "11", ]
+clus.12 <- gene_df[gene_df$Cluster == "12", ]
 
 length(unique(clus.12$geneID)) #842
 
@@ -1572,6 +1572,74 @@ upset(fromList(clusters),
       line.size = 1
 )
 dev.off()
+
+
+## different upset plot: Genes shared across clusters for each GO term
+
+# shared GO terms across clusters only 
+shared_terms <- gene_df %>% group_by(Description) %>% summarise(n_clusters = n_distinct(Cluster)) %>% filter(n_clusters > 1)
+dim(shared_terms) # 52 2
+
+# extract genes per GO term per cluster
+term_cluster_genes <- gene_df %>% filter(Description %in% shared_terms$Description) %>% group_by(Description, Cluster) %>% summarise(genes = list(unique(geneID)), .groups = "drop")
+dim(term_cluster_genes) # 146 3
+
+# find shared genes within each GO term
+library(purrr)
+
+# shared_gene_results <- term_cluster_genes %>% group_by(Description) %>% 
+#   summarise(shared_genes = purrr::reduce(genes, intersect), n_shared = length(purrr::reduce(genes, intersect)), clusters = list(unique(Cluster)), .groups = "drop") %>% filter(n_shared > 0)
+
+shared_gene_results <- term_cluster_genes %>% group_by(Description) %>% summarise(shared_genes = list(unique(unlist(genes))), clusters = list(unique(Cluster)), .groups = "drop") %>% mutate(n_shared = lengths(shared_genes)) %>% filter(n_shared > 0)
+
+shared_gene_results
+
+shared_go_terms <- shared_gene_results$Description
+
+gene_df_shared <- gene_df %>%
+  filter(Description %in% shared_go_terms)
+
+go_filtered <- shared_gene_results %>%
+  filter(n_shared >= 3) %>%   # increase threshold now that sets are bigger
+  arrange(desc(n_shared)) %>%
+  slice_head(n = 8)
+
+go_list <- go_filtered$shared_genes
+names(go_list) <- go_filtered$Description
+
+upset(fromList(go_list),
+  nsets = length(go_list))
+
+
+
+
+# build GO term gene list
+go_list <- shared_gene_results$shared_genes
+names(go_list) <- shared_gene_results$Description
+
+# filter to strongest shared 
+go_filtered <- shared_gene_results %>% dplyr::filter(n_shared >= 3) 
+
+go_list <- go_filtered$shared_genes
+names(go_list) <- go_filtered$Description
+
+# top GO terms by number of shared genes
+go_filtered <- go_filtered %>% dplyr::arrange(desc(n_shared)) %>% dplyr::slice_head(n = 15)
+
+# rebuild list
+go_list <- go_filtered$shared_genes
+names(go_list) <- go_filtered$Description
+
+upset(
+  fromList(go_list),
+  nsets = length(go_list),
+  order.by = "freq",
+  decreasing = TRUE,
+  mb.ratio = c(0.7, 0.4),
+  text.scale = 1.1,
+  point.size = 2.5,
+  line.size = 1
+)
 ```
 
 
@@ -1741,7 +1809,8 @@ VlnPlot(emb.GFPpooled_v2.filteredClustersFINAL, features = c('pbo-4'), raster=F,
 
 anterior_clusters <- as.character(c(3,4,5,9))
 central_clusters <- as.character(c(0,3,4,5,6))
-posterior_clusters <- as.character(c(0,6,10,12))
+posterior_clusters <- as.character(c(0,6,10))
+#posterior_clusters <- as.character(c(0,6,10,12))
 
 anterior_clusters.list <- cluster_gene_list[names(cluster_gene_list) %in% anterior_clusters]
 central_clusters.list <- cluster_gene_list[names(cluster_gene_list) %in% central_clusters]
@@ -1763,8 +1832,8 @@ cen_post_clusters.unlist <- as.data.frame(unique(unlist(cen_post_clusters.list))
 
 
 go_compare_bp_ant <- compareCluster(
-  geneCluster = anterior_clusters.list,
-  #geneCluster = anterior_clusters.unlist,
+  #geneCluster = anterior_clusters.list,
+  geneCluster = anterior_clusters.unlist,
   fun = "enrichGO", 
   OrgDb = org.Ce.eg.db, 
   ont = "BP",
@@ -1776,8 +1845,8 @@ go_compare_bp_ant <- compareCluster(
   qvalueCutoff = 0.05)
 
 go_compare_bp_cen <- compareCluster(
-  geneCluster = central_clusters.list,
-  #geneClusters = central_clusters.unlist,
+  #geneCluster = central_clusters.list,
+  geneClusters = central_clusters.unlist,
   fun = "enrichGO", 
   OrgDb = org.Ce.eg.db, 
   ont = "BP",
@@ -1789,8 +1858,8 @@ go_compare_bp_cen <- compareCluster(
   qvalueCutoff = 0.05)
 
 go_compare_bp_post <- compareCluster(
-  geneCluster = posterior_clusters.list, 
-  #geneClusters = posterior_clusters.unlist,
+  #geneCluster = posterior_clusters.list, 
+  geneClusters = posterior_clusters.unlist,
   fun = "enrichGO", 
   OrgDb = org.Ce.eg.db, 
   ont = "BP",
