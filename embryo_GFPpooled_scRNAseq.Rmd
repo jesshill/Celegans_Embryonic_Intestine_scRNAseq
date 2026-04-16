@@ -1414,43 +1414,38 @@ dev.off()
 
 ```{r}
 # load in data for venn diagram 
+bp.all_df <- bp_df
+str(bp.all_df)
 
-emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP <- read.csv2("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP.csv", head = TRUE, sep = ",")
-
-emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background <- read.csv2("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_background.csv", head = TRUE, sep = ",")
-
-str(emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP)
-str(emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background)
+bp.background_df <- bp_df
+str(bp.background_df) 
 
 # load needed libraries 
-
 library(tidyr)
 library(dplyr)
 library(stringr)
+install.packages("VennDiagram")
+library(VennDiagram)
 
 # filter for immune related terms for comparison 
-emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background_filtered <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background %>% 
-  filter(str_detect(emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background$Description, "immune*|innate*|defense*"))
+bp.background_df_filtered <- bp.background_df %>% filter(str_detect(bp.background_df$Description, "immune*|innate*|defense*"))
 
-emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP_filtered <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP %>% 
-  filter(str_detect(emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP$Description, "immune*|innate*|defense*"))
+bp.all_df_filtered <- bp.all_df %>% filter(str_detect(bp.all_df$Description, "immune*|innate*|defense*"))
 
-emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background
+str(bp.background_df_filtered)
+dim(bp.background_df_filtered)
 
-str(emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background_filtered)
-dim(emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background_filtered)
-
-str(emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP_filtered)
-dim(emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP_filtered)
+str(bp.all_df_filtered)
+dim(bp.all_df_filtered)
 
 # expand the gene ID column 
-genes.all <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP_filtered %>% separate_rows(geneID, sep = "/")  
+genes.all <- bp.all_df_filtered %>% separate_rows(geneID, sep = "/")  
 dim(genes.all) # 2316   13
 str(genes.all)  
 str(genes.all$geneID)
 
 
-genes.background <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background_filtered %>% separate_rows(geneID, sep = "/")  
+genes.background <- bp.background_df_filtered %>% separate_rows(geneID, sep = "/")  
 dim(genes.background) # 1716   13
 str(genes.background)
 str(genes.background$geneID)
@@ -1472,10 +1467,6 @@ length(unique_genes)
 
 
 # make the venn diagram 
-install.packages("VennDiagram")
-library(VennDiagram)
-
-
 pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.VennDiagram-GO-BP.immune.pdf", height = 10, width = 10)
 venn.plot <- draw.pairwise.venn(
   area1 = length(genes.all$geneID),
@@ -1489,11 +1480,8 @@ dev.off()
 
 
 # venn diagram for all genes now
-emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP
-emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background
-
-genes.all.all <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP %>% separate_rows(geneID, sep = "/")  
-genes.background.all <- emb.GFPpooled_v2.filteredClustersFINAL.dotPlot.GO.BP.background %>% separate_rows(geneID, sep = "/")  
+genes.all.all <- bp.all_df %>% separate_rows(geneID, sep = "/")  
+genes.background.all <- bp.background_df %>% separate_rows(geneID, sep = "/")  
 
 common_genes.all <- unique(intersect(genes.all.all$geneID, genes.background.all$geneID))
 length(common_genes.all) 
@@ -1680,8 +1668,8 @@ mid_late_clusters.unlist <- as.data.frame(unique(unlist(early_late_clusters.list
 
 
 go_compare_bp_early <- compareCluster(
-  geneCluster = early_clusters.list,
-  #geneCluster = early_clusters.unlist,
+  #geneCluster = early_clusters.list,
+  geneCluster = early_clusters.unlist,
   fun = "enrichGO", 
   OrgDb = org.Ce.eg.db,
   ont = "BP",
@@ -1694,8 +1682,8 @@ go_compare_bp_early <- compareCluster(
 
 
 go_compare_bp_mid <- compareCluster(
-  geneCluster = mid_clusters.list, 
-  #geneCluster = mid_clusters.unlist, 
+  #geneCluster = mid_clusters.list, 
+  geneCluster = mid_clusters.unlist, 
   fun = "enrichGO", 
   OrgDb = org.Ce.eg.db, 
   ont = "BP",
@@ -1707,8 +1695,8 @@ go_compare_bp_mid <- compareCluster(
   qvalueCutoff = 0.05)
 
 go_compare_bp_late <- compareCluster(
-  geneCluster = late_clusters.list,
-  #geneCluster = late_clusters.unlist,
+  #geneCluster = late_clusters.list,
+  geneCluster = late_clusters.unlist,
   fun = "enrichGO", 
   OrgDb = org.Ce.eg.db, 
   ont = "BP",
@@ -1764,7 +1752,7 @@ dev.off()
 #pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_mid_dev-early_late.pdf", height = 5, width = 10)
 pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_mid_dev-early_late.collapsed.pdf", height = 5, width = 10)
 cluster.p1 <- dotplot(bp_mid_dev, 
-                      showCategory = 3, 
+                      showCategory = 5, 
                       #showCategory = 1,
               title = "GO Enrichment (Biological Process)")
 cluster.p1 + theme(
@@ -1781,7 +1769,7 @@ dev.off()
 #pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_late_dev-early_mid.pdf", height = 5, width = 10)
 pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_late_dev-early_mid.collapsed.pdf", height = 5, width = 10)
 cluster.p1 <- dotplot(bp_late_dev, 
-                      showCategory = 3, 
+                      showCategory = 5, 
                       #showCategory = 1, 
               title = "GO Enrichment (Biological Process)") 
 cluster.p1 + theme(
