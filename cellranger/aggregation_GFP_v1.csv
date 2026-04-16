@@ -1,0 +1,5 @@
+sample_id,molecule_h5
+GFP_1,/pl/active/onishimura_lab/PROJECTS/JessicaH/scRNAseq_mixed_stage_embryos_2024/GFP_1/outs/molecule_info.h5
+GFP_2,/pl/active/onishimura_lab/PROJECTS/JessicaH/scRNAseq_mixed_stage_embryos_2024/GFP_2/outs/molecule_info.h5
+GFP_3_200,/pl/active/onishimura_lab/PROJECTS/JessicaH/scRNAseq_mixed_stage_embryos_2024/GFP_3_200/outs/molecule_info.h5
+GFP_4,/pl/active/onishimura_lab/PROJECTS/JessicaH/scRNAseq_mixed_stage_embryos_2024/GFP_4/outs/molecule_info.h5

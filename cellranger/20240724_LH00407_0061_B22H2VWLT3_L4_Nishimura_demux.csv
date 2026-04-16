@@ -1,0 +1,10 @@
+22H2VWLT3 / Nishimura_Erin_intestinal_cell_scRNAseq_mixed_Celegans_embryo_pop_07102024 / 10x_Genomics,,,,,,,,,,
+/20240724_LH00407_0061_B22H2VWLT3/Data/Intensities/BaseCalls/Unaligned_L4_duali_10x10,,,,,,,,,,
+Lane Summary,,,,,,,,,,
+,,,,,,,,,,
+Lane,Sample,Barcode sequence,PF Clusters,% of the,% Perfect,% One mismatch,Yield (Mbases),% PF,% >= Q30,Mean Quality
+,,,,lane,barcode,barcode,,Clusters,bases,Score
+4,GFP_3,TCGGCTCTAC+AGACCATCGG,"110,958,480",8.59,89.54,10.46,"33,509",100,66.11,32.47
+4,GFP_4,TGGTTCGGGT+CTCCTGCCAC,"198,104,089",15.33,70.28,29.72,"59,827",100,65.84,32.39
+4,Unsort_3,GTAGCCCTGT+ATAGATGCTC,"183,339,076",14.19,95.4,4.6,"55,368",100,63.57,31.83
+4,Unsort_4,TCCGTTGGAT+GCGAGAACGT,"158,153,024",12.24,96.59,3.41,"47,762",100,65.71,32.35
