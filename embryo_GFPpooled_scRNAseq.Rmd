@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Install packages
 
 install.packages('Seurat')
-packageVersion('Seurat') # 5.3.1
+packageVersion('Seurat') # 5.4.0
 install.packages('Matrix')
 install.packages("hdf5r")
 install.packages("clustree")
@@ -1383,9 +1383,20 @@ go_compare_bp <- compareCluster(
 
 bp <- clusterProfiler::simplify(go_compare_bp, cutoff = 0.7, by="p.adjust", select_fun = min)
 
+
+
+# Inspect current cluster names - can refactor to order (early, mid, late development)
+levels(bp@compareClusterResult$Cluster)
+
+# Set desired order
+bp@compareClusterResult$Cluster <- factor(
+  bp@compareClusterResult$Cluster,
+  levels = c("12","7","1","4","9","5","11","3","0","6","10","8","2"))
+
+
 #pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP.pdf", height = 5, width = 10)
 #pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP.collapsed.pdf", height = 5, width = 10)
-#pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_background.pdf", height = 5, width = 10)
+pdf("./Seurat_output/all_GFP_v2/emb.GFPpooled_v2.filteredClustersFINAL.dotPlot-GO-BP_background.pdf", height = 5, width = 10)
 cluster.p1 <- dotplot(bp,
                       showCategory = 1,
                       #showCategory = 5,
