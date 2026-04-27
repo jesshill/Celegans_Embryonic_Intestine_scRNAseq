@@ -1,6 +1,4 @@
-# C. elegans mixed stage embryo scRNAseq 
-
-### Exploring immune function and metabolism
+# C. elegans mixed stage embryo scRNAseq of intestinal cells
 
 ---
 
