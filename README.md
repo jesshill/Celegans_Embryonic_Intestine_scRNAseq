@@ -1,4 +1,4 @@
-# C. elegans mixed stage embryo scRNAseq of intestinal cells
+## scRNA-seq of C. elegans mixed stage embryonic intestinal cells
 
 ---
 
