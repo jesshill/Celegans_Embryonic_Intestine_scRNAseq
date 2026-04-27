@@ -2,8 +2,9 @@
 
 #### Contributers: 
 - Jessica Hill
-- Robert Williams
 - Justin Ellis
-- Erin Nishimura 
+- Robert Williams
 - Anthony Apodaca
 - Ambika Basu
+- Andrew Moore
+- Erin Nishimura 
