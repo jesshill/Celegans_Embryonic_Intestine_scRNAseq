@@ -824,9 +824,13 @@ write.csv(emb.GFPpooled_v2@assays$RNA$data,"./Seurat_output/all_GFP_v2/emb.GFPpo
 # Find differentially expressed features (cluster biomarkers): Find markers that define clusters via differential expression. By default, Seurat identifies positive and negative markers of a single cluster (specified in ident.1) compared to all other cells. 'FindAllMarkers()' automates this process for all clusters, but you can also test groups of clusters vs. each other, or against all cells.
 
 # The 'min.pct' argument requires a feature to be detected at a minimum percentage in either of the two groups of cells, and the 'thresh.test' argument requires a feature to be differentially expressed (on average) by some amount between the two groups. 'max.cells.per.ident' can also be set and will downsample each identity class to have no more cells than whatever this is set to. 
+levels(Idents(emb.GFPpooled_v2))
 
 # find markers for every cluster compared to all remaining cells, report only the positive
 emb.GFPpooled_v2.markers <- FindAllMarkers(emb.GFPpooled_v2, only.pos = F, min.pct = 0.25, logfc.threshold = 1)
+
+table(Idents(emb.GFPpooled_v2))
+table(Idents(emb.GFPpooled_v2), emb.GFPpooled_v2$cca_clusters) #the cca clusters were used for FindAllMarkers()
 
 # write the marker gene list for each cluster 
 write.csv(emb.GFPpooled_v2.markers,"./Seurat_output/all_GFP_v2/emb.GFPpooled_v2_markers.csv", row.names = TRUE)
@@ -1229,6 +1233,8 @@ FeaturePlot(emb.GFPpooled_v2.filteredClustersFINAL, reduction = "umap.filtered.f
 dev.off()
 
 VlnPlot(object = emb.GFPpooled_v2.filteredClustersFINAL, features = c("pbo-4"), ncol = 2)
+
+# "itr-1" is not posterior exclusive or intestine exclusive 
 ```
 
 
