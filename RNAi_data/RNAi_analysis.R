@@ -1,4 +1,4 @@
-# Script for graphing RNAi quantification data
+### Script for graphing RNAi quantification data ###
 
 getwd()
 
@@ -6,54 +6,181 @@ library(readr)
 library(dplyr)
 library(ggplot2)
 
-## read in data
-data <- read_csv("./RNAi_data/RNAi_Data_for_analysis.csv")
+
+### read in data ###
+data <- read_csv("./RNAi_Data/RNAi_Data_for_analysis_emb.csv")
 View(data)
 
-## clean data by removing background image readings 
-clean_data <- data %>% filter(!grepl("background", image_number))
-view(clean_data)
-dim(clean_data)
+
+### clean data by removing background image readings ###
+clean_data <- data %>% filter(!grepl("background", image_number)) 
+View(clean_data)
+
   
-## remove an outlier in MR142 group
-clean_data_no_outlier <- clean_data %>% filter(!(worm_strain == "MR142" & image_number == "10"))
-view(clean_data_no_outlier)
-dim(clean_data_no_outlier)
+### remove an outlier in MR142 group ###
+#clean_data_no_outlier <- clean_data %>% filter(!(RNAi_strain == "clec-56" & image_number == "3_1_2_2"))
+clean_data_no_outlier <- clean_data %>% filter(noramlized_intestine_flourescence >= 0)
+View(clean_data_no_outlier)
 
 
-## calc group means
-group_means <- clean_data_no_outlier %>% group_by(worm_strain, RNAi_strain) %>% summarise(
+### calc group means ###
+group_means <- clean_data_no_outlier %>% group_by(worm_strain, RNAi_strain, rep) %>% summarise(
     mean_fluor = mean(noramlized_intestine_flourescence, na.rm = TRUE),
     sd_fluor = sd(noramlized_intestine_flourescence, na.rm = TRUE),
     n = n(),
     sem_fluor = sd_fluor / sqrt(n),
     .groups = "drop")
-view(group_means)
+View(group_means)
 
-## calc negative control (L4440) means
-control_means <- group_means %>% filter(RNAi_strain == "L4440") %>% dplyr::select(worm_strain, control_mean = mean_fluor)
-view(control_means)
 
-## normalize indivudal observations
-clean_data_normalized <- clean_data_no_outlier %>% left_join(control_means, by = "worm_strain") %>% mutate(normalized_to_L4440 = noramlized_intestine_flourescence / control_mean)
-view(clean_data_normalized)
+### calc negative control (L4440) means ###
+#control_means <- group_means %>% group_by(rep) %>% filter(RNAi_strain == "L4440") %>% dplyr::select(worm_strain, control_mean = mean_fluor)
+#View(control_means)
 
-## summarize normalized replicates
-normalized_group_means <- clean_data_normalized %>% group_by(worm_strain, RNAi_strain) %>%
+control_means_rep1 <- group_means %>% filter(rep == "1") %>% filter(RNAi_strain == "L4440") %>% dplyr::select(worm_strain, control_mean = mean_fluor)
+View(control_means_rep1)
+
+control_means_rep2 <- group_means %>% filter(rep == "2") %>% filter(RNAi_strain == "L4440") %>% dplyr::select(worm_strain, control_mean = mean_fluor)
+View(control_means_rep2)
+
+
+### normalize individual observations ###
+#clean_data_normalized <- clean_data_no_outlier %>% left_join(control_means, by = "worm_strain") %>% mutate(normalized_to_L4440 = noramlized_intestine_flourescence / control_mean)
+#View(clean_data_normalized)
+
+clean_data_normalized_rep1 <- clean_data_no_outlier %>% filter(rep == "1") %>% left_join(control_means_rep1, by = "worm_strain") %>% mutate(normalized_to_L4440 = noramlized_intestine_flourescence / control_mean)
+View(clean_data_normalized_rep1)
+
+clean_data_normalized_rep2 <- clean_data_no_outlier %>% filter(rep == "2") %>% left_join(control_means_rep1, by = "worm_strain") %>% mutate(normalized_to_L4440 = noramlized_intestine_flourescence / control_mean)
+View(clean_data_normalized_rep2)
+
+
+### summarize normalized replicates ###
+#normalized_group_means <- clean_data_normalized %>% group_by(worm_strain, RNAi_strain, rep) %>%
   summarise(mean_normalized = mean(normalized_to_L4440, na.rm = TRUE), sd_normalized = sd(normalized_to_L4440, na.rm = TRUE), n = n(), sem_normalized = sd_normalized / sqrt(n), .groups = "drop")
-view(normalized_group_means)
+#View(normalized_group_means)
+
+normalized_group_means_rep1 <- clean_data_normalized_rep1 %>% group_by(worm_strain, RNAi_strain) %>%
+  summarise(mean_normalized = mean(normalized_to_L4440, na.rm = TRUE), sd_normalized = sd(normalized_to_L4440, na.rm = TRUE), n = n(), sem_normalized = sd_normalized / sqrt(n), .groups = "drop")
+View(normalized_group_means_rep1)
+
+normalized_group_means_rep2 <- clean_data_normalized_rep2 %>% group_by(worm_strain, RNAi_strain) %>%
+  summarise(mean_normalized = mean(normalized_to_L4440, na.rm = TRUE), sd_normalized = sd(normalized_to_L4440, na.rm = TRUE), n = n(), sem_normalized = sd_normalized / sqrt(n), .groups = "drop")
+View(normalized_group_means_rep2)
 
 
-## set factor order
-strain_order <- c("L4440", "pop-1", "ugt-14", "cpr-1", "y32f6a.5", "c14c6.5", "endu-2", "clec-56", "pbo-4")
+### set factor order ###
+#strain_order <- c("L4440", "pop-1", "ugt-14", "cpr-1", "y32f6a.5", "c14c6.5", "endu-2", "clec-56", "pbo-4")
+strain_order <- c("L4440", "ugt-14", "cpr-1", "y32f6a.5", "c14c6.5", "endu-2", "clec-56", "pbo-4")
 
 normalized_group_means <- normalized_group_means %>% mutate(RNAi_strain = factor(RNAi_strain, levels = strain_order))
 clean_data_normalized <- clean_data_normalized %>% mutate(RNAi_strain = factor(RNAi_strain, levels = strain_order))
 
+normalized_group_means_rep1 <- normalized_group_means_rep1 %>% mutate(RNAi_strain = factor(RNAi_strain, levels = strain_order))
+clean_data_normalized_rep1 <- clean_data_normalized_rep1 %>% mutate(RNAi_strain = factor(RNAi_strain, levels = strain_order))
 
-## graph the data 
+normalized_group_means_rep2 <- normalized_group_means_rep2 %>% mutate(RNAi_strain = factor(RNAi_strain, levels = strain_order))
+clean_data_normalized_rep2 <- clean_data_normalized_rep2 %>% mutate(RNAi_strain = factor(RNAi_strain, levels = strain_order))
 
-pdf("./RNAi_data/JM149_RNAi_data.pdf", height = 6, width = 9)
+
+### graph the data - for embryos ###
+
+pdf("./RNAi_data/JM149_RNAi_emb_data_rep1.pdf", height = 6, width = 9)
+ggplot(normalized_group_means_rep1 %>% filter(worm_strain == "JM149"), aes(x = RNAi_strain, y = mean_normalized)) + geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7) +
+  geom_errorbar(aes(ymin = mean_normalized - sem_normalized, ymax = mean_normalized + sem_normalized), width = 0.2, linewidth = 0.7) + geom_jitter(
+    data = clean_data_normalized_rep1 %>% filter(worm_strain == "JM149"),
+    aes(x = RNAi_strain, y = normalized_to_L4440),
+    width = 0.15,
+    size = 2,
+    alpha = 0.8,
+    color = "black",
+    inherit.aes = FALSE) +
+  geom_hline(
+    yintercept = 1,
+    linetype = "dashed",
+    color = "red",
+    linewidth = 1) +
+  theme_minimal() +
+  labs(
+    x = "RNAi strain",
+    y = "Normalized fluorescence (to L4440)",
+    title = "Normalized Intestinal Fluorescence (JM149)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+dev.off()
+
+pdf("./RNAi_data/JM149_RNAi_emb_data_rep2.pdf", height = 6, width = 9)
+ggplot(normalized_group_means_rep2 %>% filter(worm_strain == "JM149"), aes(x = RNAi_strain, y = mean_normalized)) + geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7) +
+  geom_errorbar(aes(ymin = mean_normalized - sem_normalized, ymax = mean_normalized + sem_normalized), width = 0.2, linewidth = 0.7) + geom_jitter(
+    data = clean_data_normalized_rep2 %>% filter(worm_strain == "JM149"),
+    aes(x = RNAi_strain, y = normalized_to_L4440),
+    width = 0.15,
+    size = 2,
+    alpha = 0.8,
+    color = "black",
+    inherit.aes = FALSE) +
+  geom_hline(
+    yintercept = 1,
+    linetype = "dashed",
+    color = "red",
+    linewidth = 1) +
+  theme_minimal() +
+  labs(
+    x = "RNAi strain",
+    y = "Normalized fluorescence (to L4440)",
+    title = "Normalized Intestinal Fluorescence (JM149)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+dev.off()
+
+pdf("./RNAi_data/MR142_RNAi_emb_data_rep1.pdf", height = 6, width = 9)
+ggplot(normalized_group_means_rep1 %>% filter(worm_strain == "MR142"), aes(x = RNAi_strain, y = mean_normalized)) + geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7) +
+  geom_errorbar(aes(ymin = mean_normalized - sem_normalized, ymax = mean_normalized + sem_normalized), width = 0.2, linewidth = 0.7) + geom_jitter(
+    data = clean_data_normalized_rep1 %>% filter(worm_strain == "MR142"),
+    aes(x = RNAi_strain, y = normalized_to_L4440),
+    width = 0.15,
+    size = 2,
+    alpha = 0.8,
+    color = "black",
+    inherit.aes = FALSE) +
+  geom_hline(
+    yintercept = 1,
+    linetype = "dashed",
+    color = "red",
+    linewidth = 1) +
+  theme_minimal() +
+  labs(
+    x = "RNAi strain",
+    y = "Normalized fluorescence (to L4440)",
+    title = "Normalized Intestinal Fluorescence (MR142)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+dev.off()
+
+pdf("./RNAi_data/MR142_RNAi_emb_data_rep2.pdf", height = 6, width = 9)
+ggplot(normalized_group_means_rep2 %>% filter(worm_strain == "MR142"), aes(x = RNAi_strain, y = mean_normalized)) + geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7) +
+  geom_errorbar(aes(ymin = mean_normalized - sem_normalized, ymax = mean_normalized + sem_normalized), width = 0.2, linewidth = 0.7) + geom_jitter(
+    data = clean_data_normalized_rep2 %>% filter(worm_strain == "MR142"),
+    aes(x = RNAi_strain, y = normalized_to_L4440),
+    width = 0.15,
+    size = 2,
+    alpha = 0.8,
+    color = "black",
+    inherit.aes = FALSE) +
+  geom_hline(
+    yintercept = 1,
+    linetype = "dashed",
+    color = "red",
+    linewidth = 1) +
+  theme_minimal() +
+  labs(
+    x = "RNAi strain",
+    y = "Normalized fluorescence (to L4440)",
+    title = "Normalized Intestinal Fluorescence (MR142)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+dev.off()
+
+
+### graph the data - for L4s ###
+
+pdf("./RNAi_data/JM149_RNAi_L4_data.pdf", height = 6, width = 9)
 ggplot(normalized_group_means %>% filter(worm_strain == "JM149"), aes(x = RNAi_strain, y = mean_normalized)) + geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7) +
   geom_errorbar(aes(ymin = mean_normalized - sem_normalized, ymax = mean_normalized + sem_normalized), width = 0.2, linewidth = 0.7) + geom_jitter(
     data = clean_data_normalized %>% filter(worm_strain == "JM149"),
@@ -77,7 +204,7 @@ ggplot(normalized_group_means %>% filter(worm_strain == "JM149"), aes(x = RNAi_s
 dev.off()
 
 
-pdf("./RNAi_data/ERT60_RNAi_data.pdf", height = 6, width = 9)
+pdf("./RNAi_data/ERT60_RNAi_L4_data.pdf", height = 6, width = 9)
 ggplot(normalized_group_means %>% filter(worm_strain == "ERT60"), aes(x = RNAi_strain, y = mean_normalized)) + geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7) +
   geom_errorbar(aes(ymin = mean_normalized - sem_normalized, ymax = mean_normalized + sem_normalized), width = 0.2, linewidth = 0.7) + geom_jitter(
     data = clean_data_normalized %>% filter(worm_strain == "ERT60"),
@@ -101,7 +228,7 @@ ggplot(normalized_group_means %>% filter(worm_strain == "ERT60"), aes(x = RNAi_s
 dev.off()
 
 
-pdf("./RNAi_data/MR142_RNAi_data.pdf", height = 6, width = 9)
+pdf("./RNAi_data/MR142_RNAi_L4_data.pdf", height = 6, width = 9)
 ggplot(normalized_group_means %>% filter(worm_strain == "MR142"), aes(x = RNAi_strain, y = mean_normalized)) + geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7) +
   geom_errorbar(aes(ymin = mean_normalized - sem_normalized, ymax = mean_normalized + sem_normalized), width = 0.2, linewidth = 0.7) + geom_jitter(
     data = clean_data_normalized %>% filter(worm_strain == "MR142"),
@@ -125,7 +252,7 @@ ggplot(normalized_group_means %>% filter(worm_strain == "MR142"), aes(x = RNAi_s
 dev.off()
 
 
-### students t test
+### students t test ###
 data_for_Ttest <- clean_data_normalized[, c("worm_strain", "RNAi_strain", "noramlized_intestine_flourescence")]
 view(data_for_Ttest)
 
