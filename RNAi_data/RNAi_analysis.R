@@ -8,6 +8,7 @@ library(ggplot2)
 
 
 ### read in data ###
+#data <- read_csv("./RNAi_Data/RNAi_Data_for_analysis_L4.csv")
 data <- read_csv("./RNAi_Data/RNAi_Data_for_analysis_emb.csv")
 View(data)
 
@@ -17,14 +18,22 @@ clean_data <- data %>% filter(!grepl("background", image_number))
 View(clean_data)
 
   
-### remove an outlier in MR142 group ###
-#clean_data_no_outlier <- clean_data %>% filter(!(RNAi_strain == "clec-56" & image_number == "3_1_2_2"))
+### remove any outliers ###
+
+#L4 data only
+clean_data_no_outlier <- clean_data %>% filter(!(RNAi_strain == "c14c6.5" & image_number == "10"))
+clean_data_no_outlier <- clean_data_no_outlier %>% filter(!(RNAi_strain == "pop-1"))
+View(clean_data_no_outlier)
+
+#emb data only
 clean_data_no_outlier <- clean_data %>% filter(noramlized_intestine_flourescence >= 0)
 View(clean_data_no_outlier)
 
 
 ### calc group means ###
-group_means <- clean_data_no_outlier %>% group_by(worm_strain, RNAi_strain, rep) %>% summarise(
+
+# L4 data only
+group_means <- clean_data_no_outlier %>% group_by(worm_strain, RNAi_strain) %>% summarise(
     mean_fluor = mean(noramlized_intestine_flourescence, na.rm = TRUE),
     sd_fluor = sd(noramlized_intestine_flourescence, na.rm = TRUE),
     n = n(),
@@ -32,34 +41,53 @@ group_means <- clean_data_no_outlier %>% group_by(worm_strain, RNAi_strain, rep)
     .groups = "drop")
 View(group_means)
 
+# emb data only
+group_means <- clean_data_no_outlier %>% group_by(worm_strain, RNAi_strain, rep) %>% summarise(
+  mean_fluor = mean(noramlized_intestine_flourescence, na.rm = TRUE),
+  sd_fluor = sd(noramlized_intestine_flourescence, na.rm = TRUE),
+  n = n(),
+  sem_fluor = sd_fluor / sqrt(n),
+  .groups = "drop")
+View(group_means)
+
 
 ### calc negative control (L4440) means ###
-#control_means <- group_means %>% group_by(rep) %>% filter(RNAi_strain == "L4440") %>% dplyr::select(worm_strain, control_mean = mean_fluor)
-#View(control_means)
 
-control_means_rep1 <- group_means %>% filter(rep == "1") %>% filter(RNAi_strain == "L4440") %>% dplyr::select(worm_strain, control_mean = mean_fluor)
+# L4 data only
+control_means <- group_means %>% filter(RNAi_strain == "L4440") %>% dplyr::select(worm_strain, control_mean = mean_fluor)
+View(control_means)
+
+# emb data only
+control_means_rep1 <- group_means %>% filter(rep == "1" & RNAi_strain == "L4440") %>% dplyr::select(worm_strain, control_mean = mean_fluor)
 View(control_means_rep1)
 
-control_means_rep2 <- group_means %>% filter(rep == "2") %>% filter(RNAi_strain == "L4440") %>% dplyr::select(worm_strain, control_mean = mean_fluor)
+control_means_rep2 <- group_means %>% filter(rep == "2" & RNAi_strain == "L4440") %>% dplyr::select(worm_strain, control_mean = mean_fluor)
 View(control_means_rep2)
 
 
 ### normalize individual observations ###
-#clean_data_normalized <- clean_data_no_outlier %>% left_join(control_means, by = "worm_strain") %>% mutate(normalized_to_L4440 = noramlized_intestine_flourescence / control_mean)
-#View(clean_data_normalized)
 
+# L4 data only
+clean_data_normalized <- clean_data_no_outlier %>% left_join(control_means, by = "worm_strain") %>% mutate(normalized_to_L4440 = noramlized_intestine_flourescence / control_mean)
+View(clean_data_normalized)
+
+# emb data only
 clean_data_normalized_rep1 <- clean_data_no_outlier %>% filter(rep == "1") %>% left_join(control_means_rep1, by = "worm_strain") %>% mutate(normalized_to_L4440 = noramlized_intestine_flourescence / control_mean)
 View(clean_data_normalized_rep1)
 
-clean_data_normalized_rep2 <- clean_data_no_outlier %>% filter(rep == "2") %>% left_join(control_means_rep1, by = "worm_strain") %>% mutate(normalized_to_L4440 = noramlized_intestine_flourescence / control_mean)
+clean_data_normalized_rep2 <- clean_data_no_outlier %>% filter(rep == "2") %>% left_join(control_means_rep2, by = "worm_strain") %>% mutate(normalized_to_L4440 = noramlized_intestine_flourescence / control_mean)
 View(clean_data_normalized_rep2)
 
 
 ### summarize normalized replicates ###
-#normalized_group_means <- clean_data_normalized %>% group_by(worm_strain, RNAi_strain, rep) %>%
-  summarise(mean_normalized = mean(normalized_to_L4440, na.rm = TRUE), sd_normalized = sd(normalized_to_L4440, na.rm = TRUE), n = n(), sem_normalized = sd_normalized / sqrt(n), .groups = "drop")
-#View(normalized_group_means)
 
+# L4 data only
+normalized_group_means <- clean_data_normalized %>% group_by(worm_strain, RNAi_strain) %>%
+  summarise(mean_normalized = mean(normalized_to_L4440, na.rm = TRUE), sd_normalized = sd(normalized_to_L4440, na.rm = TRUE), n = n(), sem_normalized = sd_normalized / sqrt(n), .groups = "drop")
+View(normalized_group_means)
+
+
+# emb data only
 normalized_group_means_rep1 <- clean_data_normalized_rep1 %>% group_by(worm_strain, RNAi_strain) %>%
   summarise(mean_normalized = mean(normalized_to_L4440, na.rm = TRUE), sd_normalized = sd(normalized_to_L4440, na.rm = TRUE), n = n(), sem_normalized = sd_normalized / sqrt(n), .groups = "drop")
 View(normalized_group_means_rep1)
@@ -70,12 +98,14 @@ View(normalized_group_means_rep2)
 
 
 ### set factor order ###
-#strain_order <- c("L4440", "pop-1", "ugt-14", "cpr-1", "y32f6a.5", "c14c6.5", "endu-2", "clec-56", "pbo-4")
+
 strain_order <- c("L4440", "ugt-14", "cpr-1", "y32f6a.5", "c14c6.5", "endu-2", "clec-56", "pbo-4")
 
+# L4 data only
 normalized_group_means <- normalized_group_means %>% mutate(RNAi_strain = factor(RNAi_strain, levels = strain_order))
 clean_data_normalized <- clean_data_normalized %>% mutate(RNAi_strain = factor(RNAi_strain, levels = strain_order))
 
+# emb data only
 normalized_group_means_rep1 <- normalized_group_means_rep1 %>% mutate(RNAi_strain = factor(RNAi_strain, levels = strain_order))
 clean_data_normalized_rep1 <- clean_data_normalized_rep1 %>% mutate(RNAi_strain = factor(RNAi_strain, levels = strain_order))
 
