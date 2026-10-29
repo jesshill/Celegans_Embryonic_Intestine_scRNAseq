@@ -1085,6 +1085,19 @@ print(paste("Number of all cells in UMAP:", num_all_cells))
 
 
 ```{r}
+emb.counts.matrix <- LayerData(object = emb.GFPpooled_v2.filteredClustersFINAL, assay = "RNA", layer = "counts")
+
+emb.counts.df <- as.data.frame(t(as.matrix(emb.counts.matrix)))
+metadata <- emb.GFPpooled_v2.filteredClustersFINAL@meta.data
+metadata <- metadata[rownames(emb.counts.df), , drop = FALSE]
+combined_data <- cbind(metadata, emb.counts.df)
+
+
+write.csv(combined_data, file = "./Seurat_output/all_GFP_v2/emb_counts_matrix.csv")
+
+```
+
+```{r}
 # make some pretty heatmaps 
 
 emb.GFPpooled_v2.filteredClustersFINAL.markers %>% group_by(cluster) %>% filter(p_val_adj < .01) %>% top_n(n=3, wt=avg_log2FC) -> top3
